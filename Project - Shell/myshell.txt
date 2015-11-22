@@ -1,0 +1,83 @@
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/uio.h>
+#include <stdlib.h>
+
+void execute(char **arr,int type,int loc){
+        int ret = 0;
+        if(strcmp(arr[0],"exit")==0){                   //exit shell
+                exit(0);
+        }else if(strcmp(arr[0],"cd")==0){               //use chdir to change directory
+                ret = chdir(arr[1]);
+                if(ret!=0){
+                        printf("Error - No Directory Found\n");
+                }
+        }else{
+                pid_t pid = fork();
+                if (pid == -1) {
+                        printf("Fork Error\n");
+                } else if (pid == 0) {
+                        if(type == 1){
+                                printf("%d\n",arr[loc+1]);
+                                freopen(arr[loc+1],"w",stdout); //write to file
+                        }else if(type == 2){
+                                freopen(arr[loc+1],"a",stdout); //append to file
+                        }else if(type == 3){
+                                freopen(arr[loc+1],"r",stdin);  //read from file
+                        }else{
+                                ret = execvp(arr[0],arr);       //send user commands to execvp
+                                if(ret == -1){
+                                        printf("Error with Execvp\n");
+                                        exit(0);
+                                }
+                        }
+                } else {
+                        wait(NULL);                     //in parent wait for child
+               }
+        }
+}
+
+void command(char *input)
+{
+        int index = 0;
+        int type = 0;   //if a file needs to get input
+        int loc = 0;    //location of file name in arr
+        char* arr[50];
+        const char delim[] = " \n\r\t;&()|";
+        input = strtok(input,delim);    //Break up input
+
+        while(input!=NULL){
+                arr[index] = input;             //add each string to array
+                if(strcmp(arr[index],">")==0){  //if writing to a file
+                        type = 1;
+                        loc = index;
+                }
+                if(strcmp(arr[index],">>")==0){ //if appending to a file
+                        type = 2;
+                        loc = index;
+                }
+                if(strcmp(arr[index],"<")==0){  //if input to a file
+                        type = 3;
+                        loc = index;
+                }
+                index++;
+                input = strtok(NULL, delim);
+        }
+        arr[index+1] = NULL;
+        execute(arr,type,loc);
+}
+
+int main()
+{
+        char input[100]="";
+        while(1){
+                fgets(input,100,stdin);         //Get user input
+                command(input);
+        }
+        return 0;
+}
+

@@ -1,0 +1,116 @@
+#include<stdio.h>
+#include<string.h>
+
+int main()
+{
+        char decision[10];
+        int continued = 0;
+        int playing = 1;
+        char userChoice[20];
+        int userValue = 0;
+        int userScore = 0;
+        char cpuChoice[10];
+        int cpuValue = 0;
+        int cpuScore = 0;
+        char gameResult[5];
+
+        printf("Welcome to Rock, Paper, Scissors\n\n");
+
+        printf("Would you like to play? ");
+        while(!continued)
+        {
+                scanf("%s",decision);
+                if(strcmp(decision,"no")==0)
+                {
+                        return 0;
+                }
+                else if(strcmp(decision,"yes")==0)
+                {
+                        continued = 1;
+                }
+                else
+                {
+                        printf("Please type yes or no: ");
+                }
+        }
+
+        while(playing)
+        {
+        continued = 0;
+                while(!continued)
+                {
+                        printf("\nWhat is your choice? ");
+                        scanf("%s",userChoice);
+                        if(strcmp(userChoice,"rock")==0)
+                        {
+                                userValue = 1;
+                                continued = 1;
+                        }
+                        else if(strcmp(userChoice,"paper")==0)
+                        {
+                                userValue = 2;
+                                continued = 1;
+                        }
+                        else if(strcmp(userChoice,"scissors")==0)
+                        {
+                                userValue = 3;
+                                continued = 1;
+                        }
+                        else
+                        {
+                                printf("Please choose rock, paper, or scissors: ");
+                        }
+                }
+                continued = 0;
+
+                srand((unsigned int)time(NULL));
+                int cpuValue = rand() % 3 + 1;
+                if(cpuValue == 1)
+                {
+                        strcpy(cpuChoice,"rock");
+                }
+                if(cpuValue == 2)
+                {
+                        strcpy(cpuChoice,"paper");
+                }
+                if(cpuValue == 3)
+                {
+                        strcpy(cpuChoice,"scissors");
+                }
+
+                if(userValue == cpuValue)
+                {
+                        strcpy(gameResult,"tie");
+                }
+                else if(userValue==1 && cpuValue==3 || userValue==2 && cpuValue==1 || userValue==3 && cpuValue==2)
+                {
+                        strcpy(gameResult,"win");
+                        userScore++;
+                }
+                else
+                {
+                        strcpy(gameResult,"lose");
+                        cpuScore++;
+                }
+                printf("The computer chooses %s. You %s this game!\n\n",cpuChoice,gameResult);
+                printf("The score is now you: %d computer: %d\n",userScore,cpuScore);
+
+                if(userScore>2||cpuScore>2)
+                {
+                        printf("Good Game! Play Again? (yes,no) ");
+                        scanf("%s",decision);
+                        if(strcmp(decision,"yes")==0)
+                        {
+                                userScore = 0;
+                                cpuScore = 0;
+                        }
+                        else
+                        {
+                                printf("Thanks for playing!\n");
+                                return 0;
+                        }
+                }
+
+        }
+        return 0;
+}

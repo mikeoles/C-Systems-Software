@@ -1,0 +1,166 @@
+#include <stdio.h>
+
+int isTag(char buffer[]);
+char buffer[128];
+
+struct tag {
+        char title[30];
+        char artist[30];
+        char album[30];
+        char year[4];
+        char comment[28];
+        char seperator;
+        char track;
+        char genre;
+};
+
+
+int main(int argc,char *argv[])
+{
+        int hasTag = 0;
+        int i = 3;
+        int j = 0;
+        int length = 4;
+        int numArgs = 0;
+        char letter = 'A';
+        char addTag[3] = "TAG";
+        char addInfo[125];
+        char end[1] = "\0";
+
+        if(argc%2!=0)//check for right amount of CL arguements
+        {
+                printf("Error in commandline arguuments passed\n");
+                return 0;
+        }
+
+        FILE* pFile = fopen( argv[1], "rb+" );
+
+        if (pFile == 0 )//Check if file exists
+        {
+                printf( "Unable to open file\n" );
+                return 0;
+        }
+
+        fseek(pFile,-128, SEEK_END);
+        fread(buffer,sizeof(buffer), 1, pFile);
+
+        if((char)buffer[0] == 'T' && (char)buffer[1] == 'A' && (char)buffer[2] == 'G')
+        {
+                hasTag = 1;
+        }
+
+        struct tag t;
+
+        if(hasTag)//set struct
+        {
+                for(j=0;j<30;j++)
+                {
+                        t.title[j] = buffer[i];
+                        i++;
+                }
+                for(j=0;j<30;j++)
+                {
+                        t.artist[j] = buffer[i];
+                        i++;
+                }
+                for(j=0;j<30;j++)
+                {
+                        t.album[j] = buffer[i];
+                        i++;
+                }
+                for(j=0;j<4;j++)
+                {
+                        t.year[j] = buffer[i];
+                        i++;
+                }
+                for(j=0;j<28;j++)
+                {
+                        t.comment[j] = buffer[i];
+                        i++;
+                }
+                t.track = buffer[126];
+        }
+        else
+        {
+                for(i=0;i<124;i++)
+                {
+                        addInfo[i] = '\0';
+                }
+                addInfo[125] = 0;
+                fseek(pFile,0, SEEK_END);
+                fwrite(addTag , 1 , sizeof(addTag) , pFile );
+                fseek(pFile,0, SEEK_END);
+                fwrite(addInfo , 1 , sizeof(addInfo) , pFile );
+        }
+
+        if(argc==2)
+        {
+                if(hasTag)
+                {
+                        printf("Title: %s\n",t.title);
+                        printf("Artist: %s\n",t.artist);
+                        printf("Album: %s\n",t.album);
+                        printf("Year: %*.*s\n", length, length,t.year);
+                        printf("Comment: %s\n",t.comment);
+                        printf("Track: %d\n",t.track);
+                }
+                else
+                {
+                        printf("No tag present. New empty tag created.\n");
+                }
+        }
+        else
+        {
+               numArgs = (argc - 2)/2;
+                for(i=1;i<=numArgs;i++)
+                {
+                        if(strcmp(argv[i*2],"-title")==0)
+                        {
+                                fseek(pFile,-125, SEEK_END);
+                                fwrite(argv[i*2+1] , 1 , sizeof(argv[i*2+1]) , pFile );
+                        }
+                        else if(strcmp(argv[i*2],"-artist")==0)
+                        {
+                                fseek(pFile,-95, SEEK_END);
+                                fwrite(argv[i*2+1] , 1 , sizeof(argv[i*2+1]) , pFile );
+                        }
+                        else if(strcmp(argv[i*2],"-album")==0)
+                        {
+                                fseek(pFile,-65, SEEK_END);
+                                fwrite(argv[i*2+1] , 1 , sizeof(argv[i*2+1]) , pFile );
+                       }
+                        else if(strcmp(argv[i*2],"-comment")==0)
+                        {
+                                fseek(pFile,-31, SEEK_END);
+                                fwrite(argv[i*2+1] , 1 , sizeof(argv[i*2+1]) , pFile );
+                        }
+                        else if(strcmp(argv[i*2],"-year")==0)
+                        {
+                                fseek(pFile,-35, SEEK_END);
+                                fwrite(argv[i*2+1] , 1 , sizeof(argv[i*2+1]) , pFile );
+                        }
+                        else if(strcmp(argv[i*2],"-track")==0)
+                        {
+                                fseek(pFile,-2, SEEK_END);
+                                fwrite(argv[i*2+1] , 1 , sizeof(argv[i*2+1]) , pFile );
+                        }
+                        else
+                        {
+                                printf("Incorrect Field Specified");
+                                return 0;
+                        }
+                        fwrite(end , 1 , sizeof(end) , pFile);
+                }
+                if(hasTag)
+                {
+                        printf("Specified fields edited\n");
+                }
+                else
+                {
+                        printf("New tag created with fields\n");
+                }
+        }
+
+
+        return 0;
+}

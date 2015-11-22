@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+
+main(){
+        printf("Welcome to Mike's Casino\n");
+        printf("Please enter your name: ");
+        char name[100];
+        char buffer[2048];
+        char decision[10];
+        char choice[10] = "yes";
+        int playing = 1;
+        int roll_one = 0;
+        int roll_two = 0;
+        int total_roll = 0;
+        int game = 0;
+        int point = 0;
+        scanf("%s",name);
+        printf("\n");
+        do{
+                printf("%s, would you like to Play or Quit? ",name);
+                scanf("%s",decision);
+        }while(!strcmp(decision,"play")==0&&!strcmp(decision,"quit")==0);
+        printf("\n");
+        while(playing){
+                if(strcmp(decision,"play")==0){
+                        //play game
+                        game = 1;
+                        if(strcmp(choice,"yes")==0){
+                                //Play game
+                                //FILE* diceFile = fopen( "/dev/dice" , "r" );
+                                //fread(buffer,sizeof(buffer), 1, diceFile);
+                                //roll_one = (int)buffer[0];
+                                //roll_two = (int)buffer[1];
+                                roll_one = 1;
+                                roll_two = 2;
+                                total_roll = roll_one + roll_two;
+                                printf("You have rolled %d + %d = %d\n",roll_one,roll_two,total_roll);
+                                if(total_roll==7||total_roll==11){//Check for immediate win
+                                        printf("You Win!\n\n");
+                                        game = 0;
+                                }else if(total_roll==2||total_roll==3||total_roll==12){//Check for immediate loss
+                                        printf("You Lose\n\n");
+                                        game = 0;
+                                }else{
+                                        point = total_roll;
+                                        printf("Point is %d, Continue Rolling",point);
+                                        char enter = 0;
+                                        getchar();
+                                        while (enter != '\r' && enter != '\n') { enter = getchar(); }
+                                }
+                                int first = 1;
+                                while(game){//Continue rolling until game is over
+                                        if(!first){
+                                                printf("Roll Again (Hit Enter)");
+                                                char enter = 0;
+                                                while (enter != '\r' && enter != '\n') { enter = getchar(); }
+                                        }
+                                        first = 0;
+                                        printf("\n");
+                                        //fread(buffer,sizeof(buffer), 1, diceFile);
+                                        //roll_one = (int)buffer[0];
+                                        //roll_two = (int)buffer[1];
+                                        roll_one = 1;
+                                        roll_two = 2;
+                                        total_roll = roll_one + roll_two;
+                                        printf("You have rolled %d + %d = %d\n",roll_one,roll_two,total_roll);
+                                        if(total_roll==point){
+                                                printf("You Win!\n\n");
+                                                game = 0;
+                                        }
+                                        if(total_roll==7){
+                                                printf("You Lose\n\n");
+                                                game = 0;
+                                        }
+                                }
+                                do{
+                                        printf("Would you like to play again? ");
+                                        scanf("%s",choice);
+                                }while(!strcmp(choice,"yes")==0&&!strcmp(choice,"no")==0);
+                                printf("\n");
+                        }else{
+                                playing = 0;
+                        }
+                }else if(strcmp(decision,"quit")==0){
+                        playing = 0;
+                }else{
+                        printf("Please enter Play or Quit\n");
+                        scanf("%s",decision);
+                }
+        }
+        printf("Goodbye, %s!\n",name);
+        return 0;
+}
+

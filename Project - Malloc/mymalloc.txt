@@ -1,0 +1,114 @@
+#include <stdio.h>
+#include <unistd.h>
+#include "mymalloc.h"
+
+struct node *root;
+struct node *leaf;
+int firsttime = 1;
+void *heapstart;//Keeps track of _end
+
+void *my_bestfit_malloc(int size){
+        if(firsttime){
+                firsttime = 0;
+                heapstart = sbrk(0);
+        }
+        if(sbrk(0)==heapstart){         //If this this the first space malloced
+                root = sbrk(size+sizeof(*root));        //start of linked list
+                leaf = root;//end of linked list
+                root->mallocsize = size;
+                root->used = 1;         //if space in in use: used = 1 if free: used = 0
+                root->next = NULL;      //pointer to next node
+                root->previous = NULL;          //pointer to previous node
+                return (char*)root+sizeof(*root);       //returns the value of the start of malloced space after the node
+        }
+
+        //if its not the first, check the linked list for the best fit
+        struct node *current;
+        struct node *best;
+        current = root;
+        int bestsize = 0;       //will be set to the current best fit when found
+        while(current->next!=NULL){     //traverse the linked list
+                if(current->used==0&&current->mallocsize>size){
+                        if(bestsize==0||current->mallocsize<=bestsize){         //if theres an open space that is a new bestfit
+                                best = current;
+                                bestsize = current->mallocsize;
+                                if(current->mallocsize==bestsize){
+                                        break;                                  //if perfect match is found break
+                                }
+                        }
+                }
+       }
+
+        if(bestsize!=0){        //If there was a usable space found inside break then add the node there
+                best->used = 1;
+                if(best->mallocsize-size-sizeof(short) < sizeof(*root)){
+                        return (char*)best+sizeof(*best);
+                }else{          //when there is enough space, break it up by adding another node;
+                        struct node *newnode;
+                        newnode = best+best->mallocsize+sizeof(*root);  //Sets the start of the new node to the end of the previous malloced area                      $
+                        newnode->used = 0;
+                        newnode->previous = best;
+                        newnode->next = best->next;
+                        best->next = newnode;
+                        best->mallocsize = size;
+                        return (char *)best+sizeof(*root);
+                }
+        }
+
+        struct node *added;     //if brk needs to be increased to add malloc to end of heap
+        added = sbrk(size+sizeof(*root));
+        current->next = added;
+        added->mallocsize = size;
+        added->used = 1;
+        added->previous = current;
+        added->next = NULL;
+        leaf = added;
+        return (char *)added+sizeof(*root);
+}
+
+void my_free(void *ptr)
+{
+        struct node *removing;          //removing is the node they are freeing
+        ptr -= sizeof(*root);
+        removing = ptr;
+        struct node *behind;            //node before removing
+        if(removing->previous!=NULL){
+                behind = removing->previous;
+        }
+        struct node *infront;           //node after removing
+        if(removing->next!=NULL){
+                infront = removing->next;
+        }
+        if(removing==leaf){             //when removing a leaf, deallocate space at the end of the heap
+                int deallocate = 0;
+                if(behind->used==0){
+                        leaf = behind->previous;
+                        deallocate = behind->mallocsize+removing->mallocsize+2*sizeof(*root);
+                }else{
+                        leaf = behind;
+                        deallocate = removing->mallocsize+sizeof(*root);
+                }
+                sbrk(-deallocate);
+        }else if(behind->used==0){      //if behind node was free before
+                int size = 0;
+                if(infront->used==0){   //if both infront and behind were free before
+                        size = behind->mallocsize+removing->mallocsize+infront->mallocsize+2*sizeof(*root);
+                        infront = infront->next;
+                }else{
+                        size = behind->mallocsize+removing->mallocsize+sizeof(*root);
+                }
+                behind->next = infront;
+                behind->mallocsize = size;
+                infront->previous = behind;
+        }else if(infront->used==0){             //if infront was free before
+                removing->used = 0;
+                int size = removing->mallocsize + infront->mallocsize + sizeof(*root);
+                removing->next = infront->next;
+                removing->mallocsize = size;
+                infront = infront->next;
+                infront->previous = removing;
+        }else{                                  //normal case where we only free one node
+                removing->used = 0;
+        }
+        return;
+}
